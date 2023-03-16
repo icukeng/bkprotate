@@ -72,7 +72,8 @@ func (vtr *Vector) SortFiles() {
 	sort.Sort(vtr.files)
 }
 func (vtr *Vector) FillWindows() {
-	// начало - максимальное значение имеющейся даты
+	if len(vtr.files) == 0 { return }
+	// начало - максимальное значение имеющейся даты (самая свежая)
 	// TODO ввести таймаут для контроля устаревания окна (или считать оттекущего дня)
 	/*
 	last file d-15, date d-16
