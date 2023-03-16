@@ -18,7 +18,7 @@ import (
 
 
 type Config struct {
-	Mail struct {
+	Mail* struct {
 		Host string
 		Port int
 		Verify bool
@@ -33,7 +33,7 @@ type Config struct {
 	}
 }
 
-type Order struct {
+type Order struct { // report
 	FileErr int // файлы с ошибками
 	FileNone int // файлы, неучтенные ни в одном правиле
 	Used int
@@ -48,7 +48,7 @@ func main() {
 	var config Config
 	var order Order
 
-	configFile, err := ioutil.ReadFile("bkprotate.yaml")
+	configFile, err := ioutil.ReadFile(os.Args[1])
 	fatalist("Read config", err)
 	err = yaml.Unmarshal(configFile, &config)
 	fatalist("Unmarshall config", err)
@@ -118,20 +118,22 @@ func main() {
 	reporttitle := fmt.Sprintf("bkprotate used:%d deleted:%d orphan:%d error:%d", 
 	order.Used, order.Unused, order.FileNone, order.FileErr)
 
-	m := gomail.NewMessage();
-	m.SetHeader("From", config.Mail.From)
-	m.SetHeader("To", config.Mail.To...)
-	m.SetHeader("Subject", reporttitle)
-	m.SetBody("text/plain", report.String())
+	if config.Mail != nil {
+		m := gomail.NewMessage();
+		m.SetHeader("From", config.Mail.From)
+		m.SetHeader("To", config.Mail.To...)
+		m.SetHeader("Subject", reporttitle)
+		m.SetBody("text/plain", report.String())
 
-	d := gomail.Dialer{Host: config.Mail.Host, Port: config.Mail.Port, SSL: false}
+		d := gomail.Dialer{Host: config.Mail.Host, Port: config.Mail.Port, SSL: false}
 
-	if config.Mail.Verify == false {
-		d.TLSConfig = &tls.Config{InsecureSkipVerify:true}
+		if config.Mail.Verify == false {
+			d.TLSConfig = &tls.Config{InsecureSkipVerify:true}
+		}
+
+		err = d.DialAndSend(m)
+		fatalist("gomail ",err)
 	}
-
-	err = d.DialAndSend(m)
-	fatalist("gomail ",err)
 
 	fmt.Println(reporttitle)
 	fmt.Println(report)
